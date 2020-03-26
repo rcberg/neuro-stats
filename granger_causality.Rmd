@@ -1,0 +1,87 @@
+---
+title: "Granger Causality"
+author: "Chris Berg"
+date: <br>`r format(Sys.Date(), "%d %B %Y")`
+output: 
+  html_document:
+    theme: yeti
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+Granger causality is a statistical notion of causality [defined by Clive Granger in his 1967 *Econometrica*](https://www.jstor.org/stable/1912791) paper. The original problem dealt with by Granger was the problem of determining causal relationship between two variables where feedback mechanisms may be present. It was originally applied to economic problems where feedback between markets occurs, but it has since been [applied in neuroscience.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2825391/) The purpose of this note is to explain briefly what the notion of Granger Causality is, and show a basic application of it using R.
+
+## Granger causality
+
+The technical definition of Granger causality, straight from the 1969 *Econometrica* paper, is:
+
+### Notation
+
+For a stochastic process $X_t$ denote the entire set of past observations as $\overline{X}$. Furthermore let the **U**niverse of our study at time $t$. Lastly let $U_t - Y_t$ signify all information *except for* some process $Y_t$.
+
+### Causality 
+
+If $$\sigma^2(Y_t | \overline{U} ) < \sigma^2(Y_t| \overline{U - X})$$ then we say $X_t$ is *Granger causing* $Y_t$ and write $X_t \Rightarrow Y_t$.
+
+### Feedback
+
+If 
+
+\begin{align*}
+
+\sigma^2(X|\overline{U}) &< \sigma^2(X|\overline{U - Y}) \\
+\sigma^2(Y|\overline{U}) &< \sigma^2(X|\overline{U - X}) \\
+
+\end{align*}
+
+then we say that *feedback* occurs, and we write $X_t \Leftrightarrow Y_t$. 
+
+### Intuition
+
+The definition of Granger causality is just saying that if we can explain $X$ using information on both $X$ *and* $Y$ better than we could by using information we already have about $X$, then $Y$ Granger causes (G-causes) $X$. Feedback then simply refers to $Y$ G-causing $X$ while $X$ G-causes $Y$. 
+
+## Practical implementation
+
+Testing whether some proposed stimulus $X_t$ Granger causes some response $Y_t$ is fairly simple. The current information $U_t$ is the period-$t$ observations $Y_t$ and $X_t$; the past observation -- $\overline{U}$ above -- are $\{ Y_{t-1} , Y_{t-2} , \dots,Y_{t-k} , X_{t-1} , X_{t-2} , \dots , X_{t-k} \}$. Testing condition for $X_t$ Granger-causing $Y_t$ can then be done by comparing two linear regression models:
+
+\begin{align}
+
+
+Y_t &= \alpha + \beta_{y1} Y_{t-1} + \beta_{y2} Y_{t-2} + \cdots + \beta_{yk} Y_{t-k} &+ \varepsilon_{1t} \\
+
+Y_t &= \alpha + \beta_{y1} Y_{t-1} + \beta_{y2} Y_{t-2} + \cdots + \beta_{yk} Y_{t-k} + \beta_{x1} X_{t-1} + \beta_{x2} X_{t-2} + \cdots + \beta_{xk} X_{t-k} &+ \varepsilon_{2t} \\
+
+
+\end{align}
+
+The two regression models can be estimated with [MLE](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation), and then [F-tests](https://en.wikipedia.org/wiki/F-test) such as the [Wald test](https://en.wikipedia.org/wiki/Wald_test) can be applied to the restricted model $(1)$ and the unrestricted model $(2)$. If the $p-$value obtained from the F-test passes the significance threshold, $X$ adds explanatory power to $Y$, and $X \Rightarrow Y$.
+
+Performing the test again with $X_t$ as the dependent variable will check to see whether there is feedback present, or whether $X$ simply Granger-causes $Y$.
+
+## Example in R
+
+Testing Granger causality can be implemented in R through the "lmtest" package, whose "grangertest" package accepts series $X$ and $Y$ and tests for whether $X$ Granger-causes $Y$. 
+
+```{r grangertest, message=F}
+if(!require(lmtest)) install.packages("lmtest")
+library(lmtest)
+
+data(ChickEgg)
+
+grangertest( formula = chicken ~ egg , # does "the egg" cause "the chicken"?
+             data = ChickEgg , 
+             order = 3  # 3 lags of chicken and egg to be used
+             )
+
+grangertest( formula = egg ~ chicken , # does "the chicken" cause "the egg"?
+             data = ChickEgg , 
+             order = 3  # 3 lags of chicken and egg to be used
+             )
+
+```
+
+The results of the test are interpreted as $Egg \Rightarrow Chicken$, or the egg Granger-causes the chicken. 
