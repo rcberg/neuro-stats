@@ -15,13 +15,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Granger causality is a statistical notion of causality [defined by Clive Granger in his 1967 *Econometrica*](https://www.jstor.org/stable/1912791) paper. The original problem dealt with by Granger was the problem of determining causal relationship between two variables where feedback mechanisms may be present. It was originally applied to economic problems where feedback between markets occurs, but it has since been [applied in neuroscience.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2825391/) The purpose of this note is to explain briefly what the notion of Granger Causality is, and show a basic application of it using R.
 
-## Granger causality
+## Granger causality: Technical background
 
 The technical definition of Granger causality, straight from the 1969 *Econometrica* paper, is:
 
 ### Notation
 
-For a stochastic process $X_t$ denote the entire set of past observations as $\overline{X}$. Furthermore let the **U**niverse of our study at time $t$. Lastly let $U_t - Y_t$ signify all information *except for* some process $Y_t$.
+For a stochastic process $X_t$ denote the entire set of past observations as $\overline{X}$. Furthermore let the **U**niverse of our study at time $t$ be $U_t$. Lastly let $U_t - Y_t$ signify all information *except for* some process $Y_t$.^[Note: $Y_t$ will denote the time-$t$ observation of the overall series $Y$. When referencing the variable itself, and not just a specific observation, I will try to drop subscripts.]
 
 ### Causality 
 
@@ -33,8 +33,8 @@ If
 
 \begin{align*}
 
-\sigma^2(X|\overline{U}) &< \sigma^2(X|\overline{U - Y}) \\
-\sigma^2(Y|\overline{U}) &< \sigma^2(X|\overline{U - X}) \\
+\sigma^2(X_t|\overline{U}) &< \sigma^2(X_t|\overline{U - Y}) \\
+\sigma^2(Y_t|\overline{U}) &< \sigma^2(Y_t|\overline{U - X}) \\
 
 \end{align*}
 
@@ -42,11 +42,11 @@ then we say that *feedback* occurs, and we write $X_t \Leftrightarrow Y_t$.
 
 ### Intuition
 
-The definition of Granger causality is just saying that if we can explain $X$ using information on both $X$ *and* $Y$ better than we could by using information we already have about $X$, then $Y$ Granger causes (G-causes) $X$. Feedback then simply refers to $Y$ G-causing $X$ while $X$ G-causes $Y$. 
+The definition of Granger causality is just saying that if we can explain $Y$ using information on both $X$ *and* $Y$ better than we could by using information we already have about $Y$, then $X$ Granger causes (G-causes) $Y$. Feedback then simply refers to $Y$ G-causing $X$ while $X$ G-causes $Y$. 
 
 ## Practical implementation
 
-Testing whether some proposed stimulus $X_t$ Granger causes some response $Y_t$ is fairly simple. The current information $U_t$ is the period-$t$ observations $Y_t$ and $X_t$; the past observation -- $\overline{U}$ above -- are $\{ Y_{t-1} , Y_{t-2} , \dots,Y_{t-k} , X_{t-1} , X_{t-2} , \dots , X_{t-k} \}$. Testing condition for $X_t$ Granger-causing $Y_t$ can then be done by comparing two linear regression models:
+Testing whether some proposed stimulus $X_t$ Granger causes some response $Y_t$ is fairly simple. The current information $U_t$ is the period-$t$ observations $Y_t$ and $X_t$; the past observation -- $\overline{U}$ above -- are $\{ Y_{t-1} , Y_{t-2} , \dots,Y_{t-k} , X_{t-1} , X_{t-2} , \dots , X_{t-k} \}$. Testing condition for $X$ Granger-causing $Y$ can then be done by comparing two linear regression models:
 
 \begin{align}
 

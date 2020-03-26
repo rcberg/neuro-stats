@@ -11,7 +11,7 @@
 
 <meta name="author" content="Chris Berg" />
 
-<meta name="date" content="2020-03-25" />
+<meta name="date" content="2020-03-26" />
 
 <title>Granger Causality</title>
 
@@ -402,7 +402,7 @@ summary {
 
 <h1 class="title toc-ignore">Granger Causality</h1>
 <h4 class="author">Chris Berg</h4>
-<h4 class="date"><br>25 March 2020</h4>
+<h4 class="date"><br>26 March 2020</h4>
 
 </div>
 
@@ -411,12 +411,12 @@ summary {
 <h2>Background</h2>
 <p>Granger causality is a statistical notion of causality <a href="https://www.jstor.org/stable/1912791">defined by Clive Granger in his 1967 <em>Econometrica</em></a> paper. The original problem dealt with by Granger was the problem of determining causal relationship between two variables where feedback mechanisms may be present. It was originally applied to economic problems where feedback between markets occurs, but it has since been <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2825391/">applied in neuroscience.</a> The purpose of this note is to explain briefly what the notion of Granger Causality is, and show a basic application of it using R.</p>
 </div>
-<div id="granger-causality" class="section level2">
-<h2>Granger causality</h2>
+<div id="granger-causality-technical-background" class="section level2">
+<h2>Granger causality: Technical background</h2>
 <p>The technical definition of Granger causality, straight from the 1969 <em>Econometrica</em> paper, is:</p>
 <div id="notation" class="section level3">
 <h3>Notation</h3>
-<p>For a stochastic process <span class="math inline">\(X_t\)</span> denote the entire set of past observations as <span class="math inline">\(\overline{X}\)</span>. Furthermore let the <strong>U</strong>niverse of our study at time <span class="math inline">\(t\)</span>. Lastly let <span class="math inline">\(U_t - Y_t\)</span> signify all information <em>except for</em> some process <span class="math inline">\(Y_t\)</span>.</p>
+<p>For a stochastic process <span class="math inline">\(X_t\)</span> denote the entire set of past observations as <span class="math inline">\(\overline{X}\)</span>. Furthermore let the <strong>U</strong>niverse of our study at time <span class="math inline">\(t\)</span> be <span class="math inline">\(U_t\)</span>. Lastly let <span class="math inline">\(U_t - Y_t\)</span> signify all information <em>except for</em> some process <span class="math inline">\(Y_t\)</span>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
 </div>
 <div id="causality" class="section level3">
 <h3>Causality</h3>
@@ -427,20 +427,20 @@ summary {
 <p>If</p>
 <p><span class="math display">\[\begin{align*}
 
-\sigma^2(X|\overline{U}) &amp;&lt; \sigma^2(X|\overline{U - Y}) \\
-\sigma^2(Y|\overline{U}) &amp;&lt; \sigma^2(X|\overline{U - X}) \\
+\sigma^2(X_t|\overline{U}) &amp;&lt; \sigma^2(X_t|\overline{U - Y}) \\
+\sigma^2(Y_t|\overline{U}) &amp;&lt; \sigma^2(Y_t|\overline{U - X}) \\
 
 \end{align*}\]</span></p>
 <p>then we say that <em>feedback</em> occurs, and we write <span class="math inline">\(X_t \Leftrightarrow Y_t\)</span>.</p>
 </div>
 <div id="intuition" class="section level3">
 <h3>Intuition</h3>
-<p>The definition of Granger causality is just saying that if we can explain <span class="math inline">\(X\)</span> using information on both <span class="math inline">\(X\)</span> <em>and</em> <span class="math inline">\(Y\)</span> better than we could by using information we already have about <span class="math inline">\(X\)</span>, then <span class="math inline">\(Y\)</span> Granger causes (G-causes) <span class="math inline">\(X\)</span>. Feedback then simply refers to <span class="math inline">\(Y\)</span> G-causing <span class="math inline">\(X\)</span> while <span class="math inline">\(X\)</span> G-causes <span class="math inline">\(Y\)</span>.</p>
+<p>The definition of Granger causality is just saying that if we can explain <span class="math inline">\(Y\)</span> using information on both <span class="math inline">\(X\)</span> <em>and</em> <span class="math inline">\(Y\)</span> better than we could by using information we already have about <span class="math inline">\(Y\)</span>, then <span class="math inline">\(X\)</span> Granger causes (G-causes) <span class="math inline">\(Y\)</span>. Feedback then simply refers to <span class="math inline">\(Y\)</span> G-causing <span class="math inline">\(X\)</span> while <span class="math inline">\(X\)</span> G-causes <span class="math inline">\(Y\)</span>.</p>
 </div>
 </div>
 <div id="practical-implementation" class="section level2">
 <h2>Practical implementation</h2>
-<p>Testing whether some proposed stimulus <span class="math inline">\(X_t\)</span> Granger causes some response <span class="math inline">\(Y_t\)</span> is fairly simple. The current information <span class="math inline">\(U_t\)</span> is the period-<span class="math inline">\(t\)</span> observations <span class="math inline">\(Y_t\)</span> and <span class="math inline">\(X_t\)</span>; the past observation – <span class="math inline">\(\overline{U}\)</span> above – are <span class="math inline">\(\{ Y_{t-1} , Y_{t-2} , \dots,Y_{t-k} , X_{t-1} , X_{t-2} , \dots , X_{t-k} \}\)</span>. Testing condition for <span class="math inline">\(X_t\)</span> Granger-causing <span class="math inline">\(Y_t\)</span> can then be done by comparing two linear regression models:</p>
+<p>Testing whether some proposed stimulus <span class="math inline">\(X_t\)</span> Granger causes some response <span class="math inline">\(Y_t\)</span> is fairly simple. The current information <span class="math inline">\(U_t\)</span> is the period-<span class="math inline">\(t\)</span> observations <span class="math inline">\(Y_t\)</span> and <span class="math inline">\(X_t\)</span>; the past observation – <span class="math inline">\(\overline{U}\)</span> above – are <span class="math inline">\(\{ Y_{t-1} , Y_{t-2} , \dots,Y_{t-k} , X_{t-1} , X_{t-2} , \dots , X_{t-k} \}\)</span>. Testing condition for <span class="math inline">\(X\)</span> Granger-causing <span class="math inline">\(Y\)</span> can then be done by comparing two linear regression models:</p>
 <p><span class="math display">\[\begin{align}
 
 
@@ -486,6 +486,12 @@ grangertest( formula = chicken ~ egg , # does &quot;the egg&quot; cause &quot;th
 ## 1     44                 
 ## 2     47 -3 0.5916 0.6238</code></pre>
 <p>The results of the test are interpreted as <span class="math inline">\(Egg \Rightarrow Chicken\)</span>, or the egg Granger-causes the chicken.</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Note: <span class="math inline">\(Y_t\)</span> will denote the time-<span class="math inline">\(t\)</span> observation of the overall series <span class="math inline">\(Y\)</span>. When referencing the variable itself, and not just a specific observation, I will try to drop subscripts.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
 </div>
 
 
